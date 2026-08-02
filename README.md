@@ -21,20 +21,17 @@ The project simulates a fintech lender providing **ACS (Airtime Credit Service)*
 credit-analytics/
 
 ├── data/
-│   ├── cr_customers.csv
+│   ├── customers.csv
 │   ├── loan_applications.csv
 │   ├── loans.csv
 │   └── loan_performance.csv
 │
 ├── sql/
 │   ├── 01_data_validation.sql
-│   └── 02_credit_analysis_queries.sql
+│   └── 02_credit_analysis.sql
 │
 ├── powerbi/
-│   └── credit_analytics_portfolio.pbix
-│
-├── database/
-│   └── erd.png
+│   └── credit_analytics_report.pbix
 │
 ├── screenshots/
 │   ├── executive_overview.png
