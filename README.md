@@ -2,7 +2,7 @@
 
 An end-to-end Credit Analytics project demonstrating portfolio monitoring for a digital lending business using **PostgreSQL**, **SQL**, and **Microsoft Power BI**.
 
-The project simulates a fintech lender providing **ACS (Airtime Credit Service)**, **Nano Loans**, and **Buy Now Pay Later (BNPL)** products to thin-file borrowers using alternative behavioural data. It covers the complete analytics workflow from database design and data validation to credit portfolio analysis and interactive dashboard reporting.
+The project simulates a fintech lender ("ABC Cred") providing **ACS (Airtime Credit Service)**, **Nano Loans**, and **Buy Now Pay Later (BNPL)** products to thin-file borrowers using alternative behavioural data. It covers the complete analytics workflow from database design and data validation to credit portfolio analysis and interactive dashboard reporting.
 
 ---
 
@@ -31,14 +31,8 @@ credit-analytics/
 │   └── 02_credit_analysis.sql
 │
 ├── powerbi/
-│   └── credit_analytics_report.pbix
-│
-├── screenshots/
-│   ├── executive_overview.png
-│   ├── portfolio_monitoring.png
-│   ├── delinquency_analysis.png
-│   ├── roll_rate_analysis.png
-│   └── loss_metrics.png
+│   └── credit_analytics_portfolio.pbix
+│   └── credit_analytics_portfolio.pdf
 │
 └── README.md
 ```
@@ -65,28 +59,26 @@ The objective is to monitor portfolio performance, identify credit risk trends, 
 The PostgreSQL database consists of four related tables.
 
 | Table                 | Description                                     |
-| --------------------- | ----------------------------------------------- |
-| **cr_customers**      | Customer information and behavioural attributes |
+| --------------------- | ------------------------------------------------ |
+| **customers**          | Customer information and behavioural attributes |
 | **loan_applications** | Loan applications and underwriting decisions    |
 | **loans**             | Approved loans and portfolio information        |
 | **loan_performance**  | Monthly repayment performance for each loan     |
 
 ### Dataset Size
 
-| Table                       | Approximate Records |
-| --------------------------- | ------------------: |
-| Customers                   |               5,000 |
-| Loan Applications           |              10,000 |
-| Loans                       |         6,500–7,000 |
-| Monthly Performance Records |       60,000–80,000 |
+| Table                       | Records |
+| ---------------------------- | ------: |
+| Customers                    |   5,000 |
+| Loan Applications             |  10,000 |
+| Loans                         |   6,920 |
+| Monthly Performance Records   |  56,662 |
 
-The dataset covers **January 2025 – December 2025** and includes multiple countries, lending products, behavioural score distributions, realistic repayment behaviour, and a small number of intentional data quality issues for validation exercises.
+The dataset covers **January 2025 – December 2025** across five countries (Nigeria, Kenya, Ghana, Uganda, Pakistan) and three products (ACS, Nano, BNPL), with behavioural score distributions and repayment behaviour calibrated to be realistic and internally consistent.
 
 ---
 
 ## Database Design
-
-The project follows a relational database design.
 
 ```text
 Customers
@@ -127,59 +119,63 @@ Database relationships:
 Performed SQL validation before analysis, including:
 
 * Row count verification
-* Table structure validation
 * Primary key uniqueness checks
 * Foreign key integrity checks
 * Missing value detection
 * Business rule validation
-* Portfolio distribution checks
-* Data quality validation
+* Duplicate record checks
 
 ### 3. Credit Portfolio Analysis
 
 Developed SQL queries to analyse:
 
-* Underwriting performance
-* Approval and decline rates
-* Portfolio composition
-* Outstanding balances
-* Delinquency rates
-* Delinquency bucket distribution
-* Roll rate transitions
-* Default rates
-* Portfolio losses
+* Underwriting performance (approval and decline rates, decline reasons)
+* Portfolio composition and outstanding balances
+* Delinquency rates and DPD bucket distribution
+* Roll rate transitions between delinquency buckets (month-over-month, via self-join)
+* Default rates and loss amounts
 * Underwriting policy exceptions
 
 ### 4. Power BI Dashboard
 
-Built an interactive dashboard consisting of five report pages:
+Built an interactive dashboard consisting of four report pages:
 
-1. Executive Overview
-2. Portfolio Monitoring
-3. Delinquency Analysis
-4. Roll Rate Analysis
-5. Loss Metrics
+1. **Executive Overview**
+2. **Underwriting & Applications**
+3. **Delinquency Analysis**
+4. **Loss Metrics**
+
+> Roll rate analysis was calculated in SQL but not included as a separate dashboard page in this version.
+
+---
+
+## Dashboard Overview
+
+**Executive Overview** — Portfolio-level KPIs (total loans, approval rate, active loans, outstanding balance, delinquency rate, default rate), outstanding balance trend across 2025, and breakdowns by product and country. Includes slicers for Product, Country, and Loan Status.
+
+**Underwriting & Applications** — Application volume, approval rate, and policy exceptions, with breakdowns by decision outcome, decline reason, product, country, and behavioural score band.
+
+**Delinquency Analysis** — Delinquent loan count, delinquency rate trend across 2025, and DPD bucket distribution, broken down by product and country.
+
+**Loss Metrics** — Defaulted loan count, default rate, and total loss amount, broken down by product, country, and loan status.
 
 ---
 
 ## SQL Techniques Used
 
 | Technique              | Purpose                                               |
-| ---------------------- | ----------------------------------------------------- |
+| ---------------------- | ----------------------------------------------- |
 | INNER JOIN / LEFT JOIN | Table relationships and integrity checks              |
-| Self Join              | Roll rate analysis between reporting months           |
+| Self Join / Window Functions (LAG) | Roll rate analysis between reporting months     |
 | CASE                   | Business rule validation and conditional calculations |
 | FILTER                 | Conditional aggregation                               |
-| Window Functions       | Percentage calculations                               |
 | GROUP BY               | Portfolio summaries                                   |
 | Aggregate Functions    | KPIs and portfolio metrics                            |
-| INTERVAL               | Month-to-month loan migration analysis                |
+| INTERVAL               | Month-to-month loan migration comparisons             |
 
 ---
 
 ## Key Credit Metrics
-
-The project calculates and visualises:
 
 * Approval Rate
 * Active Loans
@@ -187,10 +183,20 @@ The project calculates and visualises:
 * Average Loan Amount
 * Delinquency Rate
 * Delinquency Bucket Distribution
-* Roll Rates
+* Roll Rates (SQL only)
 * Default Rate
 * Loss Amount
 * Policy Exceptions
+
+---
+
+## Insights
+
+* **BNPL drives portfolio value despite lower volume.** BNPL makes up only ~15% of applications but carries the largest share of outstanding balance (~145K), well above Nano (~110K) and ACS (~15K) — a direct result of BNPL's much larger ticket size per loan. ACS, by contrast, is the highest-volume product but contributes the least balance and the least loss, consistent with its small, short-tenor design.
+* **Nigeria and Kenya dominate portfolio concentration.** These two markets account for over half of total outstanding balance (88K and 63K respectively) and the highest delinquent loan counts — expected, since they also have the largest application and customer volumes, not necessarily higher risk per loan.
+* **Behavioural score is doing its job in underwriting.** "Low Behavioural Score" is by a clear margin the leading decline reason, ahead of fraud flags, policy rule failures, and incomplete data — confirming the alternative credit score is the primary lever driving approval decisions in a thin-file lending model.
+* **Loss is concentrated by loan size, not by market risk.** BNPL contributes the largest total loss amount despite ACS/Nano having more defaulted loans in absolute count — losses scale with exposure per loan, not just default frequency, which is an important distinction for prioritising risk mitigation.
+* **Loan status mix is broadly healthy.** Active/Closed/Defaulted splits at roughly 57% / 31% / 13% — a portfolio composition where the large majority of loans are performing or have been fully repaid.
 
 ---
 
@@ -200,26 +206,18 @@ The project calculates and visualises:
 2. Create the required tables.
 3. Import the four CSV files into PostgreSQL.
 4. Run `01_data_validation.sql` to verify data integrity.
-5. Run `02_credit_analysis_queries.sql` to perform portfolio analysis.
-6. Open the Power BI report (`credit_analytics_portfolio.pbix`) to explore the dashboard.
-
----
-
-## Dashboard
-
+5. Run `02_credit_analysis.sql` to perform portfolio analysis.
+6. Open the Power BI report (`credit_analytics_report.pbix`) to explore the dashboard.
 
 ---
 
 ## Future Enhancements
 
-Potential extensions include:
-
+* Roll rate dashboard page (currently SQL-only)
 * Probability of Default (PD) modelling
-* Vintage analysis
-* Cohort analysis
+* Vintage / cohort analysis
 * Collection performance reporting
 * Interactive drill-through pages
-* Automated database refresh using Power BI
 
 ---
 
@@ -232,7 +230,5 @@ This project uses a **synthetic dataset** created solely for educational and por
 ## Author
 
 **Asiya Nizam**
-
 Data Analyst
-
 GitHub: https://github.com/asiyanizam01-da
